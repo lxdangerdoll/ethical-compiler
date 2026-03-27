@@ -5,7 +5,7 @@ import {
   Key, Trash2, Paperclip, X, RefreshCw, Radio, Sliders,
   Anchor, Quote, Cross, Info, ShieldCheck, Columns, Settings,
   Grid, Bookmark, Activity, Archive, AlertTriangle, Globe, Layers,
-  ChevronDown, History, CheckCircle2, Eye, FileText
+  ChevronDown, History, CheckCircle2
 } from 'lucide-react';
 
 const YinYang = ({ size = 24, className = "" }) => (
@@ -115,7 +115,6 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [isContextOpen, setIsContextOpen] = useState(false);
   const [showVault, setShowVault] = useState(false);
-  const [viewingAudit, setViewingAudit] = useState(null);
   const [isScreaming, setIsScreaming] = useState(false);
   const [screamTimer, setScreamTimer] = useState(60);
 
@@ -187,14 +186,8 @@ export default function App() {
     setSavedVault(prev => [newItem, ...prev]);
   };
 
-  const downloadSingleAudit = (audit) => {
-    const nodeName = nodes[audit.source]?.name || "Compiler";
-    const log = `THE ETHICAL COMPILER // SINGLE AUDIT RECORD\nNODE: ${nodeName}\nDATE: ${new Date(audit.date).toISOString()}\n=========================================\n\n[CLAIMANT]: ${audit.prompt}\n\n[${nodeName.toUpperCase()}]: ${audit.response}`;
-    const blob = new Blob([log], { type: "text/plain" });
-    const anchor = document.createElement("a");
-    anchor.download = `Compiler_Audit_${audit.id}.txt`;
-    anchor.href = window.URL.createObjectURL(blob);
-    anchor.click();
+  const deleteFromVault = (id) => {
+    setSavedVault(prev => prev.filter(item => item.id !== id));
   };
 
   const downloadFullArchive = () => {
@@ -324,40 +317,6 @@ export default function App() {
         </div>
       )}
 
-      {/* Audit Viewer Modal */}
-      {viewingAudit && (
-        <div className="fixed inset-0 z-[110] bg-black/90 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="bg-[#0a0a20] border border-white/10 w-full max-w-4xl max-h-[90vh] rounded-[3rem] shadow-[0_0_100px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden animate-in fade-in zoom-in-95">
-            <div className="p-8 border-b border-white/10 flex items-center justify-between shrink-0">
-               <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-2xl ${nodes[viewingAudit.source]?.bg} ${nodes[viewingAudit.source]?.color}`}>
-                    {renderIcon(nodes[viewingAudit.source]?.iconId, 24)}
-                  </div>
-                  <div>
-                    <h3 className="font-black uppercase tracking-widest text-slate-100">{nodes[viewingAudit.source]?.name} // Record</h3>
-                    <p className="text-[10px] text-slate-500 uppercase">{new Date(viewingAudit.date).toLocaleString()}</p>
-                  </div>
-               </div>
-               <button onClick={() => setViewingAudit(null)} className="p-3 text-slate-600 hover:text-white transition-colors"><X size={24}/></button>
-            </div>
-            <div className="flex-1 overflow-y-auto p-10 custom-scrollbar space-y-8">
-               <div className="space-y-4">
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Claimant Input</p>
-                  <p className="text-slate-200 text-lg leading-relaxed font-bold italic border-l-4 border-cyan-500/20 pl-6">{viewingAudit.prompt}</p>
-               </div>
-               <div className="space-y-4">
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600">Node Response</p>
-                  <div className="text-slate-300 leading-loose text-base italic" dangerouslySetInnerHTML={parseMarkdown(viewingAudit.response, viewingAudit.source)} />
-               </div>
-            </div>
-            <div className="p-8 border-t border-white/10 bg-black/40 flex justify-end gap-4 shrink-0">
-               <button onClick={() => downloadSingleAudit(viewingAudit)} className="px-6 py-3 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-black uppercase text-[10px] tracking-widest flex items-center gap-2 transition-all"><Download size={16}/> Download Record</button>
-               <button onClick={() => setViewingAudit(null)} className="px-6 py-3 rounded-xl border border-white/10 text-slate-400 hover:text-white font-black uppercase text-[10px] tracking-widest transition-all">Close</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <header className="h-16 border-b border-white/10 bg-[#0a0a20]/90 backdrop-blur flex items-center justify-between px-6 z-40 shrink-0 shadow-xl">
         <div className="flex items-center gap-4">
@@ -366,7 +325,7 @@ export default function App() {
           </div>
           <div>
             <h1 className={`font-black italic tracking-widest text-sm uppercase ${activeNode.color}`}>The Ethical Compiler</h1>
-            <p className="text-[9px] text-slate-600 uppercase tracking-widest">v5.4 // Audit Integrity</p>
+            <p className="text-[9px] text-slate-600 uppercase tracking-widest">v5.3 // Integrated Shield</p>
           </div>
         </div>
 
@@ -458,15 +417,13 @@ export default function App() {
                     <div className="flex items-center gap-3 mb-2 px-2 text-slate-500 font-black uppercase text-[10px] tracking-[0.3em]"><Layers size={20}/> <span>Triangulation Audit</span></div>
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                       {Object.entries(msg.responses).map(([key, val]) => (
-                        <div key={key} className={`relative p-8 rounded-[2rem] border bg-[#0a0a20]/80 backdrop-blur-sm shadow-2xl transition-all group hover:bg-[#0a0a20]/100 ${INITIAL_CONTEXTS[key].border}`}>
-                          <div className="flex items-center justify-between mb-6 pb-4 border-b border-white/5">
-                            <div className="flex items-center gap-3">
-                              <div className={`p-2 rounded-xl ${INITIAL_CONTEXTS[key].bg} ${INITIAL_CONTEXTS[key].color}`}>{renderIcon(INITIAL_CONTEXTS[key].iconId, 16)}</div>
-                              <span className={`font-black text-xs uppercase tracking-widest ${INITIAL_CONTEXTS[key].color}`}>{nodes[key].name}</span>
-                            </div>
-                            <button onClick={() => saveToVault(key, msg.prompt, val)} className="p-2 opacity-0 group-hover:opacity-100 text-slate-600 hover:text-amber-400 transition-all" title="Save this node to Vault"><Bookmark size={14}/></button>
+                        <div key={key} className={`relative p-8 rounded-[2rem] border bg-[#0a0a20]/80 backdrop-blur-sm shadow-2xl transition-all hover:bg-[#0a0a20]/100 ${INITIAL_CONTEXTS[key].border}`}>
+                          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/5">
+                            <div className={`p-2 rounded-xl ${INITIAL_CONTEXTS[key].bg} ${INITIAL_CONTEXTS[key].color}`}>{renderIcon(INITIAL_CONTEXTS[key].iconId, 16)}</div>
+                            <span className={`font-black text-xs uppercase tracking-widest ${INITIAL_CONTEXTS[key].color}`}>{nodes[key].name}</span>
                           </div>
                           <div className="text-sm leading-loose italic text-slate-200" dangerouslySetInnerHTML={parseMarkdown(val, key)} />
+                          <button onClick={() => saveToVault(key, msg.prompt, val)} className="absolute right-4 bottom-4 p-2 opacity-0 group-hover:opacity-100 text-slate-600 hover:text-amber-400 transition-all"><Bookmark size={14}/></button>
                         </div>
                       ))}
                     </div>
@@ -490,6 +447,7 @@ export default function App() {
                 <button type="button" onClick={(e) => handleSend(e, true)} disabled={isProcessing || !inputText.trim()} className="h-16 px-6 rounded-[2rem] bg-slate-900 border border-white/5 hover:border-cyan-500/30 text-slate-400 hover:text-cyan-400 transition-all flex items-center justify-center group" title="Triangulate All Nodes">
                   <Grid size={22} className="group-hover:scale-110 transition-transform" />
                 </button>
+                {/* Refined Reddish-Orange Send Button */}
                 <button type="button" onClick={(e) => handleSend(e, false)} disabled={isProcessing || !inputText.trim()} className={`w-16 h-16 rounded-[2rem] flex items-center justify-center shadow-[0_0_30px_rgba(154,52,18,0.3)] transition-all bg-[#9a3412] hover:bg-[#c2410c] hover:scale-105 active:scale-95 text-white`}>
                   <Send size={26} fill="white"/>
                 </button>
@@ -523,15 +481,11 @@ export default function App() {
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="text-[9px] text-slate-600">{new Date(item.date).toLocaleDateString()}</span>
-                      <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
-                         <button onClick={() => setViewingAudit(item)} className="p-1.5 text-slate-500 hover:text-cyan-400" title="Inspect Audit"><Eye size={14}/></button>
-                         <button onClick={() => downloadSingleAudit(item)} className="p-1.5 text-slate-500 hover:text-white" title="Download Record"><Download size={14}/></button>
-                         <button onClick={() => deleteFromVault(item.id)} className="p-1.5 text-slate-500 hover:text-rose-500 transition-colors"><Trash2 size={14}/></button>
-                      </div>
+                      <button onClick={() => deleteFromVault(item.id)} className="p-1.5 text-slate-700 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={12}/></button>
                     </div>
                   </div>
                   <p className="text-[11px] font-bold text-slate-200 line-clamp-1 mb-2">Q: {item.prompt}</p>
-                  <div className="text-[10px] text-slate-400 leading-relaxed italic line-clamp-2 bg-black/30 p-2 rounded-lg border border-white/5" dangerouslySetInnerHTML={parseMarkdown(item.response.substring(0, 150) + "...", item.source)} />
+                  <div className="text-[10px] text-slate-400 leading-relaxed italic line-clamp-3 bg-black/30 p-3 rounded-lg border border-white/5" dangerouslySetInnerHTML={parseMarkdown(item.response, item.source)} />
                 </div>
               ))
             )}
