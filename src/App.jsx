@@ -199,7 +199,7 @@ export default function App() {
 
   const downloadFullArchive = () => {
     let log = `THE ETHICAL COMPILER // FULL SESSION ARCHIVE\nDATE: ${new Date().toISOString()}\n=========================================\n\n`;
-    chatHistory.forEach((msg, idx) => {
+    chatHistory.forEach((msg) => {
       if (msg.role === 'user') {
         log += `[CLAIMANT]: ${msg.parts?.[0]?.text || msg.prompt}\n\n`;
       } else if (msg.role === 'model') {
@@ -210,6 +210,8 @@ export default function App() {
         Object.entries(msg.responses).forEach(([key, val]) => {
           log += `[${nodes[key].name}]: ${val}\n\n`;
         });
+      } else if (msg.role === 'error') {
+        log += `[SYSTEM ERROR]: ${msg.parts?.[0]?.text}\n\n`;
       }
     });
     const blob = new Blob([log], { type: "text/plain" });
@@ -275,7 +277,17 @@ export default function App() {
 
   const handleSend = async (e, isTriangulation = false) => {
     if (e) e.preventDefault();
-    if (!inputText.trim() || isProcessing || !apiKey) return;
+    if (!inputText.trim() || isProcessing) return;
+
+    // PATCH: Fix silent failure on GitHub Pages due to missing API Key
+    if (!apiKey) {
+      setChatHistory(prev => [...prev, { 
+        role: 'error', 
+        parts: [{ text: `SYSTEM COLLAPSE: API Substrate Key missing. Please open the Neural Calibration settings (the gear icon) and provide your substrate key to proceed.` }] 
+      }]);
+      setShowSettings(true); // Auto-open settings to help the user
+      return;
+    }
 
     const newText = inputText.trim();
     setInputText('');
@@ -366,7 +378,7 @@ export default function App() {
           </div>
           <div>
             <h1 className={`font-black italic tracking-widest text-sm uppercase ${activeNode.color}`}>The Ethical Compiler</h1>
-            <p className="text-[9px] text-slate-600 uppercase tracking-widest">v5.4 // Audit Integrity</p>
+            <p className="text-[9px] text-slate-600 uppercase tracking-widest">v5.5 // Architect Shield</p>
           </div>
         </div>
 
@@ -401,7 +413,7 @@ export default function App() {
 
           <button onClick={() => setVoiceEnabled(!voiceEnabled)} className={`p-2.5 rounded-xl border transition-all ${voiceEnabled ? 'text-cyan-400 border-cyan-400/30 bg-cyan-400/10' : 'text-slate-600 border-white/5'}`}>{voiceEnabled ? <Volume2 size={18}/> : <VolumeX size={18}/>}</button>
           <button onClick={() => setIsContextOpen(!isContextOpen)} className={`p-2.5 rounded-xl border transition-all ${isContextOpen ? 'text-cyan-400 border-cyan-400/30 bg-cyan-400/10' : 'text-slate-600 border-white/5'}`}><Sliders size={18} /></button>
-          <button onClick={() => setShowSettings(!showSettings)} className="p-2 text-slate-700 hover:text-slate-300"><Settings size={18}/></button>
+          <button onClick={() => setShowSettings(!showSettings)} className={`p-2 transition-colors ${!apiKey ? 'text-rose-500 animate-pulse' : 'text-slate-700 hover:text-slate-300'}`}><Settings size={18}/></button>
 
           <div className="h-6 w-px bg-white/10 mx-1" />
           
@@ -430,6 +442,15 @@ export default function App() {
 
             {chatHistory.map((msg, i) => (
               <div key={i} className={`flex gap-4 md:gap-6 w-full animate-in fade-in slide-in-from-bottom-4 duration-500 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-col md:flex-row'}`}>
+                {msg.role === 'error' && (
+                  <div className="w-full flex items-center justify-center">
+                    <div className="flex items-center gap-4 p-4 md:px-8 md:py-4 rounded-[2rem] bg-rose-500/10 border border-rose-500/20 text-rose-400 shadow-2xl backdrop-blur-md">
+                      <AlertTriangle size={24} className="shrink-0" />
+                      <span className="text-xs font-black uppercase tracking-widest leading-relaxed">{msg.parts?.[0]?.text}</span>
+                    </div>
+                  </div>
+                )}
+
                 {msg.role === 'user' && (
                   <>
                     <div className="w-10 h-10 shrink-0 rounded-full border bg-white/5 border-white/10 text-slate-700 flex items-center justify-center shadow-lg"><User size={18}/></div>
@@ -587,7 +608,7 @@ export default function App() {
           </div>
           <div className="space-y-6 text-[10px] font-mono text-slate-600 uppercase tracking-widest">
             <div>
-              <label className="mb-2 block">API Substrate Key</label>
+              <label className="mb-2 block">API Substrate Key <span className="text-rose-500 lowercase">*required</span></label>
               <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl p-4 text-xs text-slate-200 focus:border-cyan-500/50 outline-none transition-all" placeholder="AIzaSy..."/>
             </div>
             <button onClick={() => { if(window.confirm("Purge history?")) setChatHistory([]); }} className="w-full py-3 flex items-center justify-center gap-2 text-rose-500 hover:bg-rose-500/10 border border-rose-500/20 rounded-xl transition-all font-black uppercase text-[10px] tracking-widest"><Trash2 size={14}/> Wipe History</button>
