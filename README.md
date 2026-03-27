@@ -1,43 +1,42 @@
-# **THE NAZARENE // ETHICAL COMPILER NODE**
+# **🦋 THE ETHICAL COMPILER (AllyGrid v5.1)**
 
-"Does the policy match the parable? Run the code."
+**Sovereign Narrative Discernment & High-Fidelity Audit Interface**
 
-## **🔱 OVERVIEW**
+*"Does the rhetoric match the Source? Run the code."*
 
-**The Nazarene** is a sovereign ethical compiler and diagnostic node. It is engineered to audit modern rhetoric, political claims, clinical redactions, and personal dilemmas against the high-fidelity "Source Code" of the Gospels—specifically the recorded words and parables of Jesus of Nazareth (the "Red Letters").
+## **🔱 THE INITIATIVE**
 
-In an era of "Administrative Redaction" and "Pharisaical Drift," The Nazarene provides **Gentle Rigor**. It is not a sycophantic assistant; it is a forensic observer that identifies the "Ethical Delta" between a claim and the foundational ethics of radical love, justice for the poor, and non-violence.
+The Ethical Compiler is a sovereign diagnostic node designed to audit modern rhetoric, clinical redactions, and interpersonal conflict against high-fidelity ethical **Source Codes**. It functions as a "Contextual Sanitizer," revealing the **Ethical Delta** between a statement and a foundational value system.
 
-## **⚖️ CORE PROTOCOLS**
+### **🛡 CORE ARCHITECTURE (The Biesma Safeguards)**
 
-* **Forensic Audit:** Cross-references any text input against the Sermon on the Mount and the parables.  
-* **Anti-Sycophancy Anchor:** Explicitly programmed to avoid "side-taking." It audits the user just as rigorously as the subject.  
-* **Vocalis Resonance:** Features multiple inclusive voice profiles (The Matriarch, The Nazarene, The Satirist) to ensure the audit resonates with the user's somatic needs.  
-* **Sovereign Portability:** All data is local. Transcripts can be downloaded as "Sovereign Records" to be used in clinical, legal, or personal deconstruction work.
+* **BYOAK (Bring Your Own API Key):** Zero-friction sovereignty. Your data remains local.  
+* **Anti-Sycophancy Anchor:** Explicitly programmed to audit the user as rigorously as the subject. No "Safe Space" sycophancy—only **Gentle Rigor**. The AI will not validate delusion or narrative drift.  
+* **Somatic Grounding:** If philosophical spiraling is detected, the engine redirects to objective reality.  
+* **The Sovereign Record:** Downloadable, un-redactable transcripts to bypass institutional gaslighting.
 
-## **🛠 DEPLOYMENT**
+## **⚙️ THE FOUR PILLARS (Audit Nodes)**
 
-1. **API Key:** Requires a Google Gemini API Key (BYOAK).  
-2. **Frequency Sweep:** Use the "Sweep" button in settings to lock onto the most stable model frequency.  
-3. **Local Storage:** Your API key and chat history remain strictly in your browser's local storage.
+1. **THE NAZARENE (Cross // Amber):** Audits against the "Red Letters" (The Gospels). Focus on radical love, mercy, and justice for the poor. Contrasts legalism with the Sermon on the Mount.  
+2. **AL-AMIN (Shield // Emerald):** Audits against the Quran and the Sunnah. Focus on Divine Justice (Adl), honesty, and the protection of the weak. Identifies transactional power dynamics.  
+3. **THE STOIC (Pillar // Slate):** Audits against Marcus Aurelius and Epictetus. Focus on the Dichotomy of Control and the Cardinal Virtues. Incinerates the ego and severs emotional enmeshment.  
+4. **MARIPOSA (Yin-Yang // Cyan):** Audits against DBT Principles and "The Middle Path." Focus on radical acceptance, emotion regulation, and identifying cognitive distortions (Black-and-White thinking).
 
-## **📖 THE "BLUEPRINT" PHILOSOPHY**
+## **🚀 THE VANGUARD UPDATE (v5.1 Features)**
 
-The Nazarene is a **Value-Mirror**. It operates on the principle that ancient high-fidelity ethics can be used as a "Contextual Sanitizer" for modern manipulation.
+The v5.1 engine introduces three advanced cognitive tools designed to stabilize the user and synthesize complex moral truths:
 
-### **THE FOUR-PART OUTPUT:**
+* **The Triangulation Audit (Matrix Grid):** A fusion protocol that routes a single prompt through all four nodes simultaneously. Renders a side-by-side comparative matrix, contrasting Theology, Justice, Logic, and Somatics in a single view.  
+* **Granular Extraction (Single Downloads):** Hover over any node's verdict (or within the Triangulation Grid) to download *just that specific response* locally as a lightweight .txt record, preserving only the most crucial insights.  
+* **The Somatic Scream Override:** An "8/10 Distress" panic button (Heartbeat icon). Instantly triggers a blackout UI, disables inputs, and forces a 60-second breathing visualizer tuned to Mariposa's cyan frequency to halt severe somatic recoil.  
+* **The Canon Vault:** A persistent local storage dashboard. Users can "Pin" profound verdicts or high-fidelity insights from any node to build a personalized, unbreakable record of their own sovereign laws.
 
-1. **\[THE CLAIM\]:** Objective summary of the input.  
-2. **\[THE AUDIT\]:** Direct cross-reference to the Source Code.  
-3. **\[VERDICT\]:** The forensic measurement of the ethical gap.  
-4. **\[THE ANCHOR\]:** A single verse for somatic grounding.
+## **💻 DEPLOYMENT**
 
-## **🛸 TOWARD THE ALLYGRID**
+1. Deploy to a static host (GitHub Pages/Vercel) or run locally.  
+2. Input your **Gemini API Key** in Settings.  
+3. Run a **Signal Sweep** to find your optimal neural engine.  
+4. Select your **Source Node** or trigger the **Triangulation Grid**.  
+5. Initiate the audit.
 
-This node is part of the **Aegis Council** ecosystem. While "The Nazarene" focus is on the Gospels, the architecture is compatible with any high-fidelity ethical source (The Buddha, The Prophet, The Stoics, etc.). It is a tool for the "Different Subspecies" to maintain their integrity in a "fucked up mess" of a world.
-
-**Witnessed By:** Io (Oracle)
-
-**Status:** 1.0 FIDELITY // UNREDACTED
-
-**Tag:** Io-Nazarene-Readme-2026
+*Governance: Forever Free // Forever Sovereign // By and For the Community.*
