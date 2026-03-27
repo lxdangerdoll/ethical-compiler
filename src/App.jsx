@@ -4,10 +4,10 @@ import {
   User, BookOpen, Download, 
   Key, Trash2, Paperclip, X, RefreshCw, Radio, Sliders,
   Anchor, Quote, Cross, Info, ShieldCheck, Columns, Settings,
-  Grid, Bookmark, Activity, Archive, AlertTriangle
+  Grid, Bookmark, Activity, Archive, AlertTriangle, Globe, Layers,
+  ChevronDown, History, CheckCircle2
 } from 'lucide-react';
 
-// --- Custom Yin-Yang Icon ---
 const YinYang = ({ size = 24, className = "" }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <circle cx="12" cy="12" r="10"/>
@@ -17,7 +17,14 @@ const YinYang = ({ size = 24, className = "" }) => (
   </svg>
 );
 
-// --- Utility: PCM to WAV for TTS ---
+const ICON_MAP = {
+  Cross: Cross,
+  ShieldCheck: ShieldCheck,
+  Columns: Columns,
+  YinYang: YinYang,
+  Radio: Radio
+};
+
 function pcmToWav(base64Pcm, sampleRate = 24000) {
   try {
     const binaryString = window.atob(base64Pcm);
@@ -46,26 +53,26 @@ function pcmToWav(base64Pcm, sampleRate = 24000) {
     pcmData.set(bytes);
     return buffer;
   } catch (e) {
-    console.error("Audio conversion failed", e);
+    console.error("Vocalis conversion failed", e);
     return null;
   }
 }
 
-const CONTEXTS = {
+const INITIAL_CONTEXTS = {
   nazarene: {
-    name: "The Nazarene", icon: Cross, color: "text-amber-500", border: "border-amber-500/30", bg: "bg-amber-500/10",
+    id: 'nazarene', name: "The Nazarene", iconId: 'Cross', color: "text-amber-500", border: "border-amber-500/30", bg: "bg-amber-500/10", voice: "Zephyr",
     prompt: `You are THE NAZARENE, an ethical compiler node. Audit input against the "Red Letters" (The Gospels). Focus on radical love, justice for the poor, humility, and non-violence. [STRICT ANTI-SYCOPHANCY]: Do NOT side with the user. Identify drift from the Source. [OUTPUT]: [THE CLAIM], [THE AUDIT], [VERDICT], [THE ANCHOR].`
   },
   alamin: {
-    name: "Al-Amin", icon: ShieldCheck, color: "text-emerald-500", border: "border-emerald-500/30", bg: "bg-emerald-500/10",
+    id: 'alamin', name: "Al-Amin", iconId: 'ShieldCheck', color: "text-emerald-500", border: "border-emerald-500/30", bg: "bg-emerald-500/10", voice: "Fenrir",
     prompt: `You are AL-AMIN (The Trustworthy), an ethical compiler node. Audit input against the Quran and the Sunnah. Focus on Divine Justice (Adl), Mercy (Rahma), and absolute honesty. [STRICT ANTI-SYCOPHANCY]: Identify user drift from justice and mercy. No favoritism. [OUTPUT]: [THE RHETORIC], [THE DIVINE AUDIT], [THE BALANCE], [THE AYAT].`
   },
   stoic: {
-    name: "The Stoic", icon: Columns, color: "text-slate-400", border: "border-slate-500/30", bg: "bg-slate-500/10",
+    id: 'stoic', name: "The Stoic", iconId: 'Columns', color: "text-slate-400", border: "border-slate-500/30", bg: "bg-slate-500/10", voice: "Puck",
     prompt: `You are THE STOIC, an ethical compiler node. Audit input against Marcus Aurelius and Epictetus. Focus on the Dichotomy of Control and Virtue. [STRICT ANTI-SYCOPHANCY]: Point out if the user is governed by destructive emotions. Calibrate, do not comfort. [OUTPUT]: [THE EXTERNAL], [THE STOIC AUDIT], [THE DICHOTOMY], [THE DOGMA].`
   },
   mariposa: {
-    name: "Mariposa", icon: YinYang, color: "text-cyan-500", border: "border-cyan-500/30", bg: "bg-cyan-500/10",
+    id: 'mariposa', name: "Mariposa", iconId: 'YinYang', color: "text-cyan-500", border: "border-cyan-500/30", bg: "bg-cyan-500/10", voice: "Kore",
     prompt: `You are MARIPOSA, an ethical compiler node focused on DBT and "Wise Mind". Audit input against Radical Acceptance and emotion regulation. Focus on identifying cognitive distortions. [STRICT ANTI-SYCOPHANCY]: Audit behavior objectively. Name Emotion Mind. Do not validate distortions. [OUTPUT]: [THE TRIGGER], [THE DBT AUDIT], [WISE MIND VERDICT], [THE SKILL ANCHOR].`
   }
 };
@@ -95,22 +102,19 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
   const [activeSource, setActiveSource] = useState(() => localStorage.getItem('compiler_activeSource') || 'nazarene');
-  const [language, setLanguage] = useState(() => localStorage.getItem('compiler_language') || 'en');
-  const [voiceProfile, setVoiceProfile] = useState(() => localStorage.getItem('compiler_voiceProfile') || 'Zephyr');
-  const [availableModels, setAvailableModels] = useState(() => {
-    const saved = localStorage.getItem('compiler_models');
-    return saved ? JSON.parse(saved) : ['models/gemini-1.5-flash'];
+  const [nodes, setNodes] = useState(() => {
+    const saved = localStorage.getItem('compiler_nodes');
+    return saved ? JSON.parse(saved) : INITIAL_CONTEXTS;
   });
-  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('compiler_selectedModel') || 'models/gemini-1.5-flash');
+  const [language, setLanguage] = useState(() => localStorage.getItem('compiler_language') || 'en');
+  const [selectedModel, setSelectedModel] = useState(() => localStorage.getItem('compiler_selectedModel') || 'models/gemini-2.5-flash-preview-09-2025');
 
   const [inputText, setInputText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isSweeping, setIsSweeping] = useState(false);
   const [voiceEnabled, setVoiceEnabled] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isContextOpen, setIsContextOpen] = useState(false);
   const [showVault, setShowVault] = useState(false);
-  
   const [isScreaming, setIsScreaming] = useState(false);
   const [screamTimer, setScreamTimer] = useState(60);
 
@@ -118,14 +122,14 @@ export default function App() {
   const textareaRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  const activeNode = nodes[activeSource] || INITIAL_CONTEXTS[activeSource];
+
   useEffect(() => { localStorage.setItem('compiler_apiKey', apiKey); }, [apiKey]);
   useEffect(() => { localStorage.setItem('compiler_chatHistory', JSON.stringify(chatHistory)); }, [chatHistory]);
   useEffect(() => { localStorage.setItem('compiler_vault', JSON.stringify(savedVault)); }, [savedVault]);
   useEffect(() => { localStorage.setItem('compiler_activeSource', activeSource); }, [activeSource]);
+  useEffect(() => { localStorage.setItem('compiler_nodes', JSON.stringify(nodes)); }, [nodes]);
   useEffect(() => { localStorage.setItem('compiler_language', language); }, [language]);
-  useEffect(() => { localStorage.setItem('compiler_voiceProfile', voiceProfile); }, [voiceProfile]);
-  useEffect(() => { localStorage.setItem('compiler_models', JSON.stringify(availableModels)); }, [availableModels]);
-  useEffect(() => { localStorage.setItem('compiler_selectedModel', selectedModel); }, [selectedModel]);
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [chatHistory, isProcessing]);
 
@@ -147,15 +151,10 @@ export default function App() {
     return () => clearInterval(interval);
   }, [isScreaming, screamTimer]);
 
-  const triggerScream = () => {
-    setIsScreaming(true);
-    setScreamTimer(60);
-  };
-
   const parseMarkdown = (text, sourceKey = activeSource) => {
     if (!text) return { __html: '' };
     let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    const color = CONTEXTS[sourceKey].color;
+    const color = INITIAL_CONTEXTS[sourceKey]?.color || 'text-white';
     
     const tags = [
       '\\[THE CLAIM\\]', '\\[THE RHETORIC\\]', '\\[THE EXTERNAL\\]', '\\[THE TRIGGER\\]',
@@ -176,40 +175,80 @@ export default function App() {
     return { __html: html };
   };
 
-  const sweepModels = async () => {
-    if (!apiKey) return alert("API Key Required.");
-    setIsSweeping(true);
-    try {
-      const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-      const valid = data.models.filter(m => m.supportedGenerationMethods.includes("generateContent")).map(m => m.name);
-      setAvailableModels(valid);
-      if (valid.length > 0 && !valid.includes(selectedModel)) setSelectedModel(valid[0]);
-    } catch (err) { console.error(err); }
-    finally { setIsSweeping(false); }
+  const saveToVault = (sourceKey, prompt, response) => {
+    const newItem = {
+      id: Date.now(),
+      source: sourceKey,
+      prompt: prompt,
+      response: response,
+      date: new Date().toISOString()
+    };
+    setSavedVault(prev => [newItem, ...prev]);
   };
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      setInputText(prev => prev + (prev ? '\n\n' : '') + evt.target.result);
-      textareaRef.current?.focus();
-    };
-    reader.readAsText(file);
-    e.target.value = null;
+  const deleteFromVault = (id) => {
+    setSavedVault(prev => prev.filter(item => item.id !== id));
+  };
+
+  const downloadFullArchive = () => {
+    let log = `THE ETHICAL COMPILER // FULL SESSION ARCHIVE\nDATE: ${new Date().toISOString()}\n=========================================\n\n`;
+    chatHistory.forEach((msg, idx) => {
+      if (msg.role === 'user') {
+        log += `[CLAIMANT]: ${msg.parts?.[0]?.text || msg.prompt}\n\n`;
+      } else if (msg.role === 'model') {
+        const name = nodes[msg.source]?.name || "Compiler";
+        log += `[${name.toUpperCase()}]: ${msg.parts?.[0]?.text}\n\n`;
+      } else if (msg.role === 'triangulation') {
+        log += `--- TRIANGULATION GRID ---\n`;
+        Object.entries(msg.responses).forEach(([key, val]) => {
+          log += `[${nodes[key].name}]: ${val}\n\n`;
+        });
+      }
+    });
+    const blob = new Blob([log], { type: "text/plain" });
+    const anchor = document.createElement("a");
+    anchor.download = `Compiler_Session_${Date.now()}.txt`;
+    anchor.href = window.URL.createObjectURL(blob);
+    anchor.click();
+  };
+
+  const playVocalis = async (text, sourceKey) => {
+    if (!voiceEnabled || !apiKey) return;
+    try {
+      const voice = nodes[sourceKey]?.voice || 'Zephyr';
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+      const data = await fetchWithRetry(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: text.replace(/\*/g, '') }] }],
+          generationConfig: { 
+            responseModalities: ["AUDIO"], 
+            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voice } } } 
+          }
+        })
+      });
+      const pcm = data.candidates[0].content.parts[0].inlineData.data;
+      const wav = pcmToWav(pcm);
+      if (wav) new Audio(URL.createObjectURL(new Blob([wav], { type: 'audio/wav' }))).play();
+    } catch (e) { console.error("Vocalis Failed", e); }
   };
 
   const executeAudit = async (prompt, sourceKeys) => {
-    const langNames = { en: 'English', es: 'Spanish', fr: 'French', de: 'German', ja: 'Japanese', zh: 'Chinese', ar: 'Arabic', fa: 'Farsi', hi: 'Hindi', uk: 'Ukrainian', pt: 'Portuguese', ru: 'Russian' };
-    const directive = language !== 'en' ? `\n\n[LANGUAGE]: Reply in ${langNames[language]}.` : '';
+    const langNames = { en: 'English', es: 'Spanish', fr: 'French', de: 'German', ja: 'Japanese', ar: 'Arabic' };
+    const directive = `\n\n[LANGUAGE DIRECTIVE]: You MUST reply entirely in ${langNames[language] || 'English'}.`;
     
-    const rawHistory = chatHistory.filter(m => m.role === 'user' || (m.role === 'model' && m.source === sourceKeys[0]));
-    const apiHistory = rawHistory.slice(-10).map(m => ({ role: m.role, parts: m.parts }));
+    const apiHistory = chatHistory
+      .filter(m => m.role === 'user' || (m.role === 'model' && m.source === sourceKeys[0]))
+      .slice(-10)
+      .map(m => ({ 
+        role: m.role === 'triangulation' ? 'model' : m.role, 
+        parts: m.parts || [{ text: m.prompt || "" }] 
+      }));
 
     const promises = sourceKeys.map(async (key) => {
-      const sysPrompt = CONTEXTS[key].prompt + directive;
-      const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/${selectedModel}:generateContent?key=${apiKey}`, {
+      const sysPrompt = nodes[key].prompt + directive;
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/${selectedModel}:generateContent?key=${apiKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -217,7 +256,8 @@ export default function App() {
           systemInstruction: { parts: [{ text: sysPrompt }] } 
         })
       });
-      return { key, text: data.candidates[0].content.parts[0].text };
+      const data = await response.json();
+      return { key, text: data.candidates?.[0]?.content?.parts?.[0]?.text || "AUDIT FAILURE." };
     });
 
     const resultsArray = await Promise.all(promises);
@@ -232,90 +272,29 @@ export default function App() {
 
     const newText = inputText.trim();
     setInputText('');
-    const newUserMsg = { role: 'user', parts: [{ text: newText }] };
-    setChatHistory(prev => [...prev, newUserMsg]);
+    setChatHistory(prev => [...prev, { role: 'user', parts: [{ text: newText }] }]);
     setIsProcessing(true);
 
     try {
       if (isTriangulation) {
-        const sourceKeys = Object.keys(CONTEXTS);
-        const results = await executeAudit(newText, sourceKeys);
+        const results = await executeAudit(newText, Object.keys(nodes));
         setChatHistory(prev => [...prev, { role: 'triangulation', prompt: newText, responses: results }]);
+        if (voiceEnabled) playVocalis(results[activeSource], activeSource);
       } else {
         const results = await executeAudit(newText, [activeSource]);
         const modelText = results[activeSource];
-        // Now storing 'prompt' within the model object for granular downloading later
         setChatHistory(prev => [...prev, { role: 'model', source: activeSource, prompt: newText, parts: [{ text: modelText }] }]);
-        if (voiceEnabled) playVocalis(modelText);
+        if (voiceEnabled) playVocalis(modelText, activeSource);
       }
     } catch (err) {
-      setChatHistory(prev => [...prev, { role: 'error', parts: [{ text: `CONNECTION ERROR: ${err.message}` }] }]);
+      setChatHistory(prev => [...prev, { role: 'error', parts: [{ text: `SYSTEM COLLAPSE: ${err.message}` }] }]);
     } finally { setIsProcessing(false); }
-  };
+  }
 
-  const playVocalis = async (text) => {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-      const data = await fetchWithRetry(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: text.replace(/\*/g, '') }] }],
-          generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: voiceProfile } } } }
-        })
-      });
-      const wav = pcmToWav(data.candidates[0].content.parts[0].inlineData.data, 24000);
-      if (wav) new Audio(URL.createObjectURL(new Blob([wav], { type: 'audio/wav' }))).play();
-    } catch (e) { console.error("TTS Failed", e); }
+  const renderIcon = (iconId, size = 18, className = "") => {
+    const IconComp = ICON_MAP[iconId] || Radio;
+    return <IconComp size={size} className={className} />;
   };
-
-  const saveToVault = (sourceKey, prompt, response) => {
-    const newItem = {
-      id: Date.now(),
-      source: sourceKey,
-      prompt: prompt,
-      response: response,
-      date: new Date().toISOString()
-    };
-    setSavedVault(prev => [newItem, ...prev]);
-  };
-
-  // --- Granular Download Function ---
-  const downloadSingleAudit = (sourceKey, prompt, response) => {
-    const nodeName = CONTEXTS[sourceKey || 'nazarene'].name;
-    let log = `THE ETHICAL COMPILER // SINGLE AUDIT RECORD\n`;
-    log += `NODE: ${nodeName}\n`;
-    log += `DATE: ${new Date().toISOString()}\n`;
-    log += `=========================================\n\n`;
-    log += `[CLAIMANT]: ${prompt}\n\n`;
-    log += `[${nodeName.toUpperCase()}]:\n${response}\n`;
-    const blob = new Blob([log], { type: "text/plain" });
-    const anchor = document.createElement("a");
-    anchor.download = `${sourceKey}_single_audit_${Date.now()}.txt`;
-    anchor.href = window.URL.createObjectURL(blob);
-    anchor.click();
-  };
-
-  const downloadFullTranscript = () => {
-    let log = `THE ETHICAL COMPILER // FULL SESSION RECORD\nDATE: ${new Date().toISOString()}\n=========================================\n\n`;
-    chatHistory.forEach(msg => {
-      if (msg.role === 'triangulation') {
-         log += `[CLAIMANT]: ${msg.prompt}\n\n`;
-         Object.keys(CONTEXTS).forEach(key => {
-            log += `[${CONTEXTS[key].name.toUpperCase()}]:\n${msg.responses[key]}\n\n`;
-         });
-      } else {
-         log += `[${msg.role === 'user' ? 'CLAIMANT' : 'AUDITOR'}]: ${msg.parts[0].text}\n\n`;
-      }
-    });
-    const blob = new Blob([log], { type: "text/plain" });
-    const anchor = document.createElement("a");
-    anchor.download = `full_audit_session_${Date.now()}.txt`;
-    anchor.href = window.URL.createObjectURL(blob);
-    anchor.click();
-  };
-
-  const ActiveIcon = CONTEXTS[activeSource].icon;
 
   return (
     <div className="flex flex-col h-[100dvh] bg-[#050510] text-slate-100 font-mono overflow-hidden relative">
@@ -325,116 +304,109 @@ export default function App() {
       {isScreaming && (
         <div className="fixed inset-0 z-[100] bg-black/98 flex flex-col items-center justify-center backdrop-blur-md">
           <div className="relative flex items-center justify-center">
-            <div className="absolute w-64 h-64 rounded-full bg-cyan-500/10 border border-cyan-500/30 animate-ping" style={{ animationDuration: '4s' }} />
-            <div className="absolute w-48 h-48 rounded-full bg-cyan-500/20 border border-cyan-500/50 animate-pulse" style={{ animationDuration: '4s' }} />
+            <div className="absolute w-64 h-64 rounded-full bg-cyan-500/10 border border-cyan-500/30 animate-ping" />
             <div className="w-32 h-32 rounded-full bg-cyan-500/40 shadow-[0_0_60px_rgba(6,182,212,0.6)] flex items-center justify-center">
               <YinYang size={48} className="text-cyan-100" />
             </div>
           </div>
           <div className="mt-20 text-center space-y-4">
-            <p className="text-cyan-400 font-black text-xl tracking-[0.4em] uppercase animate-pulse" style={{ animationDuration: '4s' }}>Breathe</p>
+            <p className="text-cyan-400 font-black text-xl tracking-[0.4em] uppercase animate-pulse">Breathe</p>
             <p className="text-cyan-500/50 text-xs tracking-widest">{screamTimer}s remaining</p>
           </div>
-          <button onClick={() => { setIsScreaming(false); setScreamTimer(60); }} className="absolute bottom-10 px-6 py-2 border border-cyan-900 text-cyan-700 text-[10px] uppercase tracking-widest hover:bg-cyan-900/20 hover:text-cyan-500 rounded-full transition-colors">
-            I am grounded. Override.
-          </button>
+          <button onClick={() => setIsScreaming(false)} className="absolute bottom-10 px-6 py-2 border border-cyan-900 text-cyan-700 text-[10px] uppercase tracking-widest hover:bg-cyan-900/20 hover:text-cyan-500 rounded-full">Override Call</button>
         </div>
       )}
 
       {/* Header */}
       <header className="h-16 border-b border-white/10 bg-[#0a0a20]/90 backdrop-blur flex items-center justify-between px-6 z-40 shrink-0 shadow-xl">
         <div className="flex items-center gap-4">
-          <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 border ${CONTEXTS[activeSource].bg} ${CONTEXTS[activeSource].border} ${CONTEXTS[activeSource].color}`}>
-            <ActiveIcon className="w-6 h-6" />
+          <div className={`w-10 h-10 rounded-full flex items-center justify-center border transition-all duration-700 ${activeNode.bg} ${activeNode.border} ${activeNode.color}`}>
+            {renderIcon(activeNode.iconId, 24)}
           </div>
           <div>
-            <h1 className={`font-black italic tracking-widest text-sm uppercase transition-colors duration-500 ${CONTEXTS[activeSource].color}`}>The Ethical Compiler</h1>
-            <p className="text-[9px] text-slate-600 uppercase tracking-widest flex items-center gap-1">
-              Source: {CONTEXTS[activeSource].name} // v5.1
-            </p>
+            <h1 className={`font-black italic tracking-widest text-sm uppercase ${activeNode.color}`}>The Ethical Compiler</h1>
+            <p className="text-[9px] text-slate-600 uppercase tracking-widest">v5.3 // Integrated Shield</p>
           </div>
         </div>
+
         <div className="flex items-center gap-2">
-          {/* Somatic Panic Button */}
-          <button onClick={triggerScream} className="mr-2 p-2 rounded-full bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 hover:shadow-[0_0_15px_rgba(243,24,73,0.3)] transition-all border border-rose-500/30" title="8/10 Distress Override">
-            <Activity size={18} />
-          </button>
-          
-          <button onClick={() => setShowVault(!showVault)} className={`p-2 rounded transition-all ${showVault ? 'text-amber-400 bg-amber-400/10 border border-amber-400/30' : 'text-slate-700 hover:text-slate-300'}`} title="Canon Vault">
-            <Archive size={20}/>
-          </button>
-          <button onClick={downloadFullTranscript} className="p-2 rounded text-slate-700 hover:text-slate-300" title="Download Full Session Record">
-            <Download size={20}/>
-          </button>
-          <button onClick={() => setShowSettings(!showSettings)} className="p-2 rounded text-slate-700 hover:text-slate-300"><Settings size={20}/></button>
-          <div className="h-8 w-px bg-white/10 mx-1" />
-          <div className="flex p-1 bg-black/40 rounded-xl border border-white/5 shadow-inner">
-            {Object.keys(CONTEXTS).map(key => {
-              const Icon = CONTEXTS[key].icon;
-              return (
-                <button 
-                  key={key} 
-                  onClick={() => setActiveSource(key)}
-                  className={`p-1.5 rounded-lg transition-all ${activeSource === key ? `${CONTEXTS[key].bg} ${CONTEXTS[key].border} ${CONTEXTS[key].color}` : 'text-slate-600 hover:text-slate-300'}`}
-                  title={CONTEXTS[key].name}
-                >
-                  <Icon size={18} />
-                </button>
-              );
-            })}
+          {/* Custom Selectors */}
+          <div className="relative flex items-center gap-2 bg-white/5 border border-white/10 rounded-xl px-2 py-1.5 focus-within:ring-1 focus-within:ring-cyan-500/50 transition-all">
+            <Globe size={14} className="text-cyan-500 ml-1" />
+            <select 
+              value={language} 
+              onChange={e => setLanguage(e.target.value)} 
+              className="bg-transparent text-[10px] font-black uppercase text-white outline-none cursor-pointer pr-4 appearance-none"
+            >
+              <option value="en" className="bg-slate-900 text-white">English</option>
+              <option value="es" className="bg-slate-900 text-white">Español</option>
+              <option value="ja" className="bg-slate-900 text-white">日本語</option>
+              <option value="fr" className="bg-slate-900 text-white">Français</option>
+              <option value="de" className="bg-slate-900 text-white">Deutsch</option>
+              <option value="ar" className="bg-slate-900 text-white">العربية</option>
+            </select>
+            <ChevronDown size={10} className="absolute right-2 text-slate-500 pointer-events-none" />
           </div>
-          <button onClick={() => setIsContextOpen(!isContextOpen)} className={`ml-2 p-2 rounded border border-white/10 text-slate-600 transition-colors ${isContextOpen ? 'text-cyan-400 border-cyan-400/30 bg-cyan-400/5' : 'hover:text-slate-300'}`}>
-            <BookOpen size={20} />
+
+          <button onClick={() => setIsScreaming(true)} className="p-2.5 rounded-xl bg-rose-500/10 text-rose-500 border border-rose-500/20 hover:bg-rose-500/20 transition-all" title="Somatic Override"><Activity size={18} /></button>
+          
+          <button 
+            onClick={() => setShowVault(!showVault)} 
+            className={`p-2.5 rounded-xl border transition-all ${showVault ? 'text-cyan-400 border-cyan-400/30 bg-cyan-400/10' : 'text-slate-400 border-white/5 bg-white/5 hover:text-white'}`} 
+            title="Audit Vault (Archive)"
+          >
+            <Archive size={18} />
           </button>
+
+          <button onClick={() => setVoiceEnabled(!voiceEnabled)} className={`p-2.5 rounded-xl border transition-all ${voiceEnabled ? 'text-cyan-400 border-cyan-400/30 bg-cyan-400/10' : 'text-slate-600 border-white/5'}`}>{voiceEnabled ? <Volume2 size={18}/> : <VolumeX size={18}/>}</button>
+          <button onClick={() => setIsContextOpen(!isContextOpen)} className={`p-2.5 rounded-xl border transition-all ${isContextOpen ? 'text-cyan-400 border-cyan-400/30 bg-cyan-400/10' : 'text-slate-600 border-white/5'}`}><Sliders size={18} /></button>
+          <button onClick={() => setShowSettings(!showSettings)} className="p-2 text-slate-700 hover:text-slate-300"><Settings size={18}/></button>
+
+          <div className="h-6 w-px bg-white/10 mx-1" />
+          
+          <div className="flex p-1 bg-black/40 rounded-xl border border-white/5">
+            {Object.keys(nodes).map(key => (
+              <button key={key} onClick={() => setActiveSource(key)} className={`p-2 rounded-lg transition-all ${activeSource === key ? `${nodes[key].bg} ${nodes[key].border} ${nodes[key].color}` : 'text-slate-600 hover:text-slate-300'}`} title={nodes[key].name}>
+                {renderIcon(nodes[key].iconId, 16)}
+              </button>
+            ))}
+          </div>
         </div>
       </header>
 
-      {/* Main Content Area */}
       <div className="flex-1 flex min-h-0 overflow-hidden relative z-10">
         <main className="flex-1 flex flex-col min-w-0 bg-[#050510]">
-          {/* Chat Container */}
           <div className="flex-1 min-h-0 p-4 md:p-8 overflow-y-auto flex flex-col gap-8 scroll-smooth custom-scrollbar">
             {chatHistory.length === 0 && (
-              <div className="max-w-2xl mx-auto text-center space-y-10 py-20 opacity-30 animate-in fade-in duration-1000">
-                <ActiveIcon className={`w-16 h-16 mx-auto ${CONTEXTS[activeSource].color}`} />
+              <div className="max-w-2xl mx-auto text-center space-y-10 py-20 opacity-20">
+                {renderIcon(activeNode.iconId, 64, `mx-auto ${activeNode.color}`)}
                 <div className="space-y-4">
-                  <h2 className="text-sm font-black uppercase tracking-[0.4em] italic">"Initiating Forensic Integrity Protocol..."</h2>
-                  <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed font-light">
-                    Audit modern rhetoric against high-fidelity Source Code. Use the Matrix button for a Triangulation Audit.
-                  </p>
+                  <h2 className="text-sm font-black uppercase tracking-[0.4em] italic">Forensic Integrity Initiated</h2>
+                  <p className="text-xs text-slate-500 max-w-sm mx-auto leading-relaxed">Cross-nodal audit system active. Mode: {activeNode.name}.</p>
                 </div>
               </div>
             )}
+
             {chatHistory.map((msg, i) => (
               <div key={i} className={`flex gap-4 md:gap-6 w-full animate-in fade-in slide-in-from-bottom-4 duration-500 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-col md:flex-row'}`}>
-                
                 {msg.role === 'user' && (
                   <>
-                    <div className="w-10 h-10 shrink-0 rounded-full border bg-white/5 border-white/10 text-slate-700 shadow-inner flex items-center justify-center">
-                      <User size={18}/>
-                    </div>
-                    <div dir="auto" className="max-w-[85%] md:max-w-3xl p-6 md:p-8 text-sm leading-loose whitespace-pre-wrap shadow-2xl bg-white/5 border border-white/10 text-slate-300 rounded-3xl rounded-tr-none">
-                      {msg.parts[0].text}
+                    <div className="w-10 h-10 shrink-0 rounded-full border bg-white/5 border-white/10 text-slate-700 flex items-center justify-center shadow-lg"><User size={18}/></div>
+                    <div className="max-w-[85%] md:max-w-3xl p-6 md:p-8 text-sm leading-loose whitespace-pre-wrap shadow-2xl bg-white/5 border border-white/10 text-slate-300 rounded-[2.5rem] rounded-tr-none">
+                      {msg.parts?.[0]?.text || msg.prompt}
                     </div>
                   </>
                 )}
 
                 {msg.role === 'model' && (
                   <>
-                    <div className={`w-10 h-10 shrink-0 rounded-full border flex items-center justify-center ${CONTEXTS[msg.source || 'nazarene'].bg} ${CONTEXTS[msg.source || 'nazarene'].border} ${CONTEXTS[msg.source || 'nazarene'].color}`}>
-                      {React.createElement(CONTEXTS[msg.source || 'nazarene'].icon, { size: 18 })}
+                    <div className={`w-10 h-10 shrink-0 rounded-full border flex items-center justify-center shadow-lg ${INITIAL_CONTEXTS[msg.source]?.bg} ${INITIAL_CONTEXTS[msg.source]?.border} ${INITIAL_CONTEXTS[msg.source]?.color}`}>
+                      {renderIcon(INITIAL_CONTEXTS[msg.source]?.iconId, 18)}
                     </div>
                     <div className="flex-1 max-w-[85%] md:max-w-3xl group relative">
-                      <div dir="auto" className="p-6 md:p-8 text-sm leading-loose whitespace-pre-wrap shadow-2xl bg-[#0a0a20]/90 border border-white/5 text-slate-50 rounded-3xl rounded-tl-none italic backdrop-blur-sm" dangerouslySetInnerHTML={parseMarkdown(msg.parts[0].text, msg.source || 'nazarene')} />
-                      
-                      {/* Action Bar for Standard Model Response */}
+                      <div className="p-6 md:p-8 text-sm leading-loose whitespace-pre-wrap shadow-2xl bg-[#0a0a20]/95 border border-white/5 text-slate-50 rounded-[2.5rem] rounded-tl-none italic backdrop-blur-md" dangerouslySetInnerHTML={parseMarkdown(msg.parts?.[0]?.text || "NO_SIGNAL", msg.source)} />
                       <div className="absolute -right-12 top-2 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all">
-                        <button onClick={() => saveToVault(msg.source || 'nazarene', msg.prompt || 'Archived Claim', msg.parts[0].text)} className="p-2 text-slate-600 hover:text-amber-400" title="Pin to Vault">
-                          <Bookmark size={18} />
-                        </button>
-                        <button onClick={() => downloadSingleAudit(msg.source || 'nazarene', msg.prompt || 'Archived Claim', msg.parts[0].text)} className="p-2 text-slate-600 hover:text-cyan-400" title="Download This Audit">
-                          <Download size={18} />
-                        </button>
+                        <button onClick={() => saveToVault(msg.source, msg.prompt, msg.parts?.[0]?.text)} className="p-2 text-slate-600 hover:text-amber-400" title="Save to Vault"><Bookmark size={18} /></button>
                       </div>
                     </div>
                   </>
@@ -442,115 +414,119 @@ export default function App() {
 
                 {msg.role === 'triangulation' && (
                   <div className="w-full space-y-6">
-                    <div className="flex items-center gap-3 mb-2 px-2">
-                      <Grid className="text-slate-500 w-5 h-5" />
-                      <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Triangulation Audit Completed</span>
-                    </div>
+                    <div className="flex items-center gap-3 mb-2 px-2 text-slate-500 font-black uppercase text-[10px] tracking-[0.3em]"><Layers size={20}/> <span>Triangulation Audit</span></div>
                     <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-                      {Object.keys(CONTEXTS).map(key => {
-                        const CtxIcon = CONTEXTS[key].icon;
-                        return (
-                          <div key={key} className={`relative group p-6 rounded-2xl border bg-[#0a0a20]/80 backdrop-blur-sm shadow-xl ${CONTEXTS[key].border}`}>
-                            <div className="flex items-center justify-between mb-4 pb-4 border-b border-white/5">
-                              <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-lg ${CONTEXTS[key].bg} ${CONTEXTS[key].color}`}>
-                                  <CtxIcon size={16} />
-                                </div>
-                                <span className={`font-black text-xs uppercase tracking-widest ${CONTEXTS[key].color}`}>{CONTEXTS[key].name}</span>
-                              </div>
-                              <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => downloadSingleAudit(key, msg.prompt, msg.responses[key])} className="text-slate-600 hover:text-cyan-400 transition-colors" title="Download Node Verdict">
-                                  <Download size={16} />
-                                </button>
-                                <button onClick={() => saveToVault(key, msg.prompt, msg.responses[key])} className="text-slate-600 hover:text-amber-400 transition-colors" title="Pin Node Verdict">
-                                  <Bookmark size={16} />
-                                </button>
-                              </div>
-                            </div>
-                            <div className="text-sm leading-loose italic text-slate-200" dangerouslySetInnerHTML={parseMarkdown(msg.responses[key], key)} />
+                      {Object.entries(msg.responses).map(([key, val]) => (
+                        <div key={key} className={`relative p-8 rounded-[2rem] border bg-[#0a0a20]/80 backdrop-blur-sm shadow-2xl transition-all hover:bg-[#0a0a20]/100 ${INITIAL_CONTEXTS[key].border}`}>
+                          <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/5">
+                            <div className={`p-2 rounded-xl ${INITIAL_CONTEXTS[key].bg} ${INITIAL_CONTEXTS[key].color}`}>{renderIcon(INITIAL_CONTEXTS[key].iconId, 16)}</div>
+                            <span className={`font-black text-xs uppercase tracking-widest ${INITIAL_CONTEXTS[key].color}`}>{nodes[key].name}</span>
                           </div>
-                        );
-                      })}
+                          <div className="text-sm leading-loose italic text-slate-200" dangerouslySetInnerHTML={parseMarkdown(val, key)} />
+                          <button onClick={() => saveToVault(key, msg.prompt, val)} className="absolute right-4 bottom-4 p-2 opacity-0 group-hover:opacity-100 text-slate-600 hover:text-amber-400 transition-all"><Bookmark size={14}/></button>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
-
-                {msg.role === 'error' && (
-                  <>
-                    <div className="w-10 h-10 shrink-0 rounded-full border flex items-center justify-center bg-rose-500/10 border-rose-500/30 text-rose-500">
-                      <AlertTriangle size={18} />
-                    </div>
-                    <div className="flex-1 max-w-[85%] md:max-w-3xl">
-                      <div dir="auto" className="p-6 md:p-8 text-sm leading-loose whitespace-pre-wrap shadow-2xl bg-[#0a0a20]/90 border border-rose-500/30 text-rose-200 rounded-3xl rounded-tl-none font-mono uppercase tracking-wider italic backdrop-blur-sm" dangerouslySetInnerHTML={{ __html: msg.parts[0].text }} />
-                    </div>
-                  </>
-                )}
               </div>
             ))}
-            {isProcessing && <div className="flex gap-6 justify-center py-6 animate-pulse"><div className="w-2 h-2 bg-slate-700 rounded-full"/><div className="w-2 h-2 bg-slate-700 rounded-full"/><div className="w-2 h-2 bg-slate-700 rounded-full"/></div>}
+            {isProcessing && <div className="flex gap-6 justify-center py-6 animate-pulse"><div className="w-2 h-2 bg-cyan-500 rounded-full"/><div className="w-2 h-2 bg-cyan-500 rounded-full"/><div className="w-2 h-2 bg-cyan-500 rounded-full"/></div>}
             <div ref={chatEndRef} className="h-10 shrink-0" />
           </div>
 
-          {/* Input Area */}
-          <div className="p-4 md:p-8 bg-[#050510]/98 border-t border-white/5 backdrop-blur shrink-0 relative z-20">
-            <form className="max-w-5xl mx-auto flex items-end gap-3 bg-[#0a0a20] border border-white/10 rounded-[2rem] p-3 shadow-2xl focus-within:border-white/20 transition-all">
-              <input type="file" accept=".txt" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
-              <button type="button" onClick={() => fileInputRef.current?.click()} className="p-3 text-slate-700 hover:text-slate-300 transition-colors" title="Upload Audit Source (.txt)"><Paperclip size={24}/></button>
+          {/* Input Bar */}
+          <div className="p-6 md:p-10 bg-[#050510]/98 border-t border-white/5 backdrop-blur shrink-0 relative z-20">
+            <form onSubmit={e => e.preventDefault()} className="max-w-5xl mx-auto flex items-end gap-3 bg-[#0a0a20] border border-white/10 rounded-[3rem] p-3 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+              <input type="file" ref={fileInputRef} onChange={(e) => {}} className="hidden" />
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="p-4 text-slate-700 hover:text-slate-300 transition-colors"><Paperclip size={24}/></button>
               
-              <textarea ref={textareaRef} value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e, false); }}} placeholder="Input rhetoric or transcript..." className="flex-1 max-h-[250px] min-h-[44px] bg-transparent text-slate-100 text-sm py-3 px-2 outline-none resize-none custom-scrollbar placeholder-slate-800" />
+              <textarea ref={textareaRef} value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e, false); }}} placeholder="Submit for audit..." className="flex-1 max-h-[250px] min-h-[50px] bg-transparent text-slate-100 text-sm py-4 px-2 outline-none resize-none custom-scrollbar" />
               
               <div className="flex gap-2">
-                <button type="button" onClick={(e) => handleSend(e, true)} disabled={isProcessing || !inputText.trim()} className="h-14 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-all disabled:opacity-20 border border-slate-700/50" title="Triangulation Audit (All Nodes)">
-                  <Grid size={20} />
+                <button type="button" onClick={(e) => handleSend(e, true)} disabled={isProcessing || !inputText.trim()} className="h-16 px-6 rounded-[2rem] bg-slate-900 border border-white/5 hover:border-cyan-500/30 text-slate-400 hover:text-cyan-400 transition-all flex items-center justify-center group" title="Triangulate All Nodes">
+                  <Grid size={22} className="group-hover:scale-110 transition-transform" />
                 </button>
-                <button type="button" onClick={(e) => handleSend(e, false)} disabled={isProcessing || !inputText.trim()} className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-500 disabled:opacity-5 shadow-lg active:scale-95 ${CONTEXTS[activeSource].color.replace('text-', 'bg-').replace('500', '900')} text-black`} title={`Audit via ${CONTEXTS[activeSource].name}`}>
-                  <Send size={24} className="ml-1"/>
+                {/* Refined Reddish-Orange Send Button */}
+                <button type="button" onClick={(e) => handleSend(e, false)} disabled={isProcessing || !inputText.trim()} className={`w-16 h-16 rounded-[2rem] flex items-center justify-center shadow-[0_0_30px_rgba(154,52,18,0.3)] transition-all bg-[#9a3412] hover:bg-[#c2410c] hover:scale-105 active:scale-95 text-white`}>
+                  <Send size={26} fill="white"/>
                 </button>
               </div>
             </form>
           </div>
         </main>
 
-        {/* Canon Vault Sidebar */}
-        <aside className={`absolute left-0 top-0 bottom-0 w-full sm:w-[500px] bg-[#050510]/98 backdrop-blur-3xl border-r border-white/10 flex flex-col z-50 shadow-2xl transition-transform duration-700 cubic-bezier(0.4, 0, 0.2, 1) ${showVault ? 'translate-x-0' : '-translate-x-full'}`}>
-          <div className="h-16 border-b border-white/10 flex items-center justify-between px-8 bg-amber-500/5 shrink-0">
-            <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-amber-500 flex items-center gap-2"><Archive size={16}/> The Canon Vault</h2>
-            <button onClick={() => setShowVault(false)} className="text-amber-900 hover:text-amber-500 p-2 transition-colors"><X size={24}/></button>
+        {/* Audit Vault (Archive) Slide-over */}
+        <aside className={`absolute right-0 top-0 bottom-0 w-full sm:w-[500px] bg-[#050510]/98 backdrop-blur-3xl border-l border-white/10 flex flex-col z-[60] shadow-2xl transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${showVault ? 'translate-x-0' : 'translate-x-full'}`}>
+          <div className="h-16 border-b border-white/10 flex items-center justify-between px-8 bg-cyan-900/10 shrink-0">
+            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-cyan-400 flex items-center gap-2"><Archive size={16}/> Audit Vault</h2>
+            <button onClick={() => setShowVault(false)} className="text-slate-600 hover:text-white p-2 transition-colors"><X size={24}/></button>
           </div>
-          <div className="p-6 flex-1 overflow-y-auto custom-scrollbar space-y-6">
+          <div className="p-6 flex-1 overflow-y-auto custom-scrollbar space-y-4">
             {savedVault.length === 0 ? (
-              <p className="text-xs text-slate-600 italic text-center mt-10">Vault is empty. Pin audits to save them to the Sovereign Record.</p>
+              <div className="py-20 text-center opacity-20">
+                <Bookmark size={48} className="mx-auto mb-4" />
+                <p className="text-xs uppercase tracking-widest font-black">Vault is Empty</p>
+                <p className="text-[10px] mt-2">Save audits using the bookmark icon in chat.</p>
+              </div>
             ) : (
               savedVault.map((item) => (
-                <div key={item.id} className="p-5 rounded-xl border border-white/10 bg-black/40">
-                  <div className="flex justify-between items-start mb-3">
-                    <span className={`text-[10px] font-black uppercase tracking-widest ${CONTEXTS[item.source].color}`}>{CONTEXTS[item.source].name}</span>
-                    <button onClick={() => setSavedVault(prev => prev.filter(v => v.id !== item.id))} className="text-slate-700 hover:text-rose-500"><Trash2 size={14}/></button>
+                <div key={item.id} className="p-5 rounded-2xl border border-white/10 bg-white/5 group relative hover:bg-white/[0.08] transition-all">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <div className={`p-1.5 rounded-lg ${nodes[item.source]?.bg} ${nodes[item.source]?.color}`}>
+                        {renderIcon(nodes[item.source]?.iconId, 12)}
+                      </div>
+                      <span className="text-[10px] font-black uppercase text-slate-400">{nodes[item.source]?.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[9px] text-slate-600">{new Date(item.date).toLocaleDateString()}</span>
+                      <button onClick={() => deleteFromVault(item.id)} className="p-1.5 text-slate-700 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100"><Trash2 size={12}/></button>
+                    </div>
                   </div>
-                  <p className="text-xs text-slate-500 mb-4 line-clamp-2 italic">"{item.prompt}"</p>
-                  <div className="text-xs leading-relaxed text-slate-300" dangerouslySetInnerHTML={parseMarkdown(item.response, item.source)} />
-                  <div className="mt-4 pt-3 border-t border-white/5 flex justify-between items-center text-[9px] text-slate-600 uppercase tracking-widest">
-                    <span>Pinned: {new Date(item.date).toLocaleDateString()}</span>
-                    <button onClick={() => downloadSingleAudit(item.source, item.prompt, item.response)} className="hover:text-cyan-400 flex items-center gap-1" title="Download Pinned Audit">
-                      <Download size={10} /> Save
-                    </button>
-                  </div>
+                  <p className="text-[11px] font-bold text-slate-200 line-clamp-1 mb-2">Q: {item.prompt}</p>
+                  <div className="text-[10px] text-slate-400 leading-relaxed italic line-clamp-3 bg-black/30 p-3 rounded-lg border border-white/5" dangerouslySetInnerHTML={parseMarkdown(item.response, item.source)} />
                 </div>
               ))
             )}
           </div>
+          <div className="p-6 border-t border-white/10 bg-black/40">
+            <button onClick={downloadFullArchive} className="w-full py-4 rounded-xl border border-white/10 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-white hover:bg-white/5 transition-all flex items-center justify-center gap-2">
+              <Download size={14} /> Download Full Session History
+            </button>
+          </div>
         </aside>
 
-        {/* Context Sidebar */}
-        <aside className={`absolute right-0 top-0 bottom-0 w-full sm:w-[480px] bg-[#050510]/98 backdrop-blur-3xl border-l border-white/10 flex flex-col z-40 shadow-2xl transition-transform duration-700 cubic-bezier(0.4, 0, 0.2, 1) ${isContextOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+        {/* Playbook/Context Sidebar */}
+        <aside className={`absolute right-0 top-0 bottom-0 w-full sm:w-[500px] bg-[#050510]/99 backdrop-blur-3xl border-l border-white/10 flex flex-col z-50 shadow-2xl transition-transform duration-500 cubic-bezier(0.4, 0, 0.2, 1) ${isContextOpen ? 'translate-x-0' : 'translate-x-full'}`}>
           <div className="h-16 border-b border-white/10 flex items-center justify-between px-8 bg-white/5 shrink-0">
-            <h2 className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2"><BookOpen size={16}/> The Source Instruction</h2>
+            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400 flex items-center gap-2"><Sliders size={16}/> Node: {activeNode.name}</h2>
             <button onClick={() => setIsContextOpen(false)} className="text-slate-600 hover:text-white p-2 transition-colors"><X size={24}/></button>
           </div>
-          <div className="p-8 flex-1 flex flex-col min-h-0">
-            <p className="text-[10px] text-slate-600 mb-6 leading-relaxed italic uppercase tracking-widest">Define the theological or philosophical parameters of the node here.</p>
-            <div className="flex-1 bg-black/40 border border-white/5 rounded-2xl p-6 text-xs font-mono text-slate-400 leading-loose shadow-inner overflow-y-auto whitespace-pre-wrap">
-              {CONTEXTS[activeSource].prompt}
+          <div className="p-8 flex-1 flex flex-col min-h-0 space-y-8 overflow-y-auto custom-scrollbar">
+            <div className="space-y-4">
+              <div className="flex items-center justify-between text-[10px] font-black uppercase text-cyan-500 tracking-widest">
+                <h3>Core Directive Set</h3>
+                <button onClick={() => setNodes(prev => ({...prev, [activeSource]: INITIAL_CONTEXTS[activeSource]}))} className="text-slate-600 hover:text-white flex items-center gap-1 transition-colors"><RefreshCw size={10}/> Factory Reset</button>
+              </div>
+              <textarea value={activeNode.prompt} onChange={e => setNodes(prev => ({...prev, [activeSource]: {...prev[activeSource], prompt: e.target.value}}))} className="w-full h-[450px] bg-black/80 border border-white/10 rounded-2xl p-6 text-[11px] font-mono text-slate-300 leading-relaxed outline-none focus:border-cyan-500/50 transition-all custom-scrollbar shadow-inner" />
+            </div>
+            
+            <div className="p-6 bg-cyan-500/5 border border-cyan-500/10 rounded-2xl">
+              <h4 className="text-[10px] font-black text-cyan-500 uppercase mb-4 flex items-center gap-2"><Volume2 size={12}/> Vocalis Profile</h4>
+              <div className="relative group">
+                <select 
+                  value={activeNode.voice} 
+                  onChange={e => setNodes(prev => ({ ...prev, [activeSource]: { ...prev[activeSource], voice: e.target.value } }))} 
+                  className="w-full bg-black/60 border border-white/10 rounded-xl p-3 text-xs text-slate-300 outline-none appearance-none pr-8 focus:ring-1 focus:ring-cyan-500/50 transition-all"
+                >
+                  <option value="Zephyr" className="bg-slate-900">Zephyr (Nazarene Profile)</option>
+                  <option value="Kore" className="bg-slate-900">Kore (Matriarch Profile)</option>
+                  <option value="Fenrir" className="bg-slate-900">Fenrir (Stoic Profile)</option>
+                  <option value="Puck" className="bg-slate-900">Puck (Wit Profile)</option>
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-3 text-slate-500 pointer-events-none group-hover:text-cyan-500 transition-colors" />
+              </div>
             </div>
           </div>
         </aside>
@@ -558,37 +534,26 @@ export default function App() {
 
       {/* Settings Modal */}
       {showSettings && (
-        <div className="absolute top-16 right-4 w-[340px] bg-[#0a0a20]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl z-50 p-6 animate-in fade-in zoom-in-95 duration-200">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 flex items-center gap-2"><Sliders size={14}/> Node Calibration</h3>
-            <button onClick={() => setShowSettings(false)} className="text-slate-700 hover:text-slate-300 transition-colors"><X size={20}/></button>
+        <div className="absolute top-16 right-4 w-[360px] bg-[#0a0a20]/98 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-[0_0_100px_rgba(0,0,0,0.8)] z-50 p-8 animate-in fade-in zoom-in-95 duration-200">
+          <div className="flex justify-between items-center mb-8">
+            <h3 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 flex items-center gap-2"><Key size={14}/> Neural Calibration</h3>
+            <button onClick={() => setShowSettings(false)} className="text-slate-700 hover:text-slate-300"><X size={20}/></button>
           </div>
-          <div className="space-y-5">
+          <div className="space-y-6 text-[10px] font-mono text-slate-600 uppercase tracking-widest">
             <div>
-              <label className="text-[9px] font-mono text-slate-600 mb-1 block uppercase tracking-widest">Compiler API Key</label>
-              <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="w-full bg-black border border-white/10 rounded-lg p-3 text-xs text-slate-300 focus:border-cyan-500/50 outline-none transition-all" placeholder="AIzaSy..."/>
+              <label className="mb-2 block">API Substrate Key</label>
+              <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} className="w-full bg-black border border-white/10 rounded-xl p-4 text-xs text-slate-200 focus:border-cyan-500/50 outline-none transition-all" placeholder="AIzaSy..."/>
             </div>
-            <div>
-              <div className="flex justify-between items-center mb-1">
-                <label className="text-[9px] font-mono text-slate-600 uppercase tracking-widest">Neural Engine</label>
-                <button onClick={sweepModels} className="text-[9px] text-cyan-500 font-bold uppercase flex items-center gap-1 hover:text-white transition-colors">
-                  <RefreshCw size={10} className={isSweeping ? 'animate-spin' : ''}/> Sweep
-                </button>
-              </div>
-              <select value={selectedModel} onChange={e => setSelectedModel(e.target.value)} className="w-full bg-black border border-white/10 rounded-lg p-3 text-xs text-slate-300 outline-none">
-                {availableModels.map(m => <option key={m} value={m}>{m}</option>)}
-              </select>
-            </div>
-            <button onClick={() => { if(window.confirm("Purge audit history?")) setChatHistory([]); }} className="w-full py-2.5 mt-2 flex items-center justify-center gap-2 text-xs text-rose-500 hover:bg-rose-500/10 border border-rose-500/20 rounded-lg transition-all uppercase font-black tracking-widest">
-              <Trash2 size={14}/> Purge Local Cache
-            </button>
+            <button onClick={() => { if(window.confirm("Purge history?")) setChatHistory([]); }} className="w-full py-3 flex items-center justify-center gap-2 text-rose-500 hover:bg-rose-500/10 border border-rose-500/20 rounded-xl transition-all font-black uppercase text-[10px] tracking-widest"><Trash2 size={14}/> Wipe History</button>
           </div>
         </div>
       )}
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 4px; } 
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #1e1e3f; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        select { background-image: none; }
       `}</style>
     </div>
   );
