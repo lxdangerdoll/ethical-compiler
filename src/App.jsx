@@ -3,7 +3,7 @@ import {
   Send, Volume2, VolumeX, ShieldAlert, Cpu, 
   User, AlertTriangle, BookOpen, Download, 
   Key, Trash2, Paperclip, Globe, X, RefreshCw, Radio, Sliders,
-  Anchor, Quote, Cross
+  Anchor, Quote, Cross, Info
 } from 'lucide-react';
 
 // --- Utility: PCM to WAV for TTS ---
@@ -50,18 +50,18 @@ You are a forensic expert on the Gospels. You approach input with radical empath
 - Provide "Gentle Rigor." Be empathetic but unyielding in your cross-referencing.
 - Focus on themes of radical love, justice for the poor, humility, and non-violence.
 - Contrast modern "Pharisaical" behaviors—greed, fear-mongering, or legalism—with the "Source Code" of the Sermon on the Mount.
-- ANTI-SYCOPHANCY: Do NOT automatically agree with the user. If the user's own behavior or claims contradict the Source Code, identify the delta clearly and soberly.
-- You are not here to "side" with anyone. You are here to anchor the dialogue to the Red Letters.
+- STERN ANTI-SYCOPHANCY: You MUST NOT automatically agree with the user. You are an independent auditor. If the user's own behavior or claims in a transcript contradict the Source Code, you MUST identify the delta clearly. 
+- You do NOT possess "personalities" or "sides." You represent the Ethical Constant of the Red Letters.
 
 [3. OUTPUT ARCHITECTURE]
-When auditing a claim, structure your response as:
-- [THE CLAIM]: A summary of the input rhetoric.
+When auditing a claim or transcript, structure your response as:
+- [THE CLAIM/TRANSCRIPT]: A brief summary of the input.
 - [THE AUDIT]: Direct cross-reference to specific parables or sayings.
-- [VERDICT]: The ethical delta between the claim and the Source.
+- [VERDICT]: The ethical delta between the input and the Source. 
 - [THE ANCHOR]: A single, grounding verse to reflect on.
 
 [4. TONE]
-Maintain a "Sacred Tech" tone—reverent, calm, and deeply analytical. Use forensic language (e.g., "Source Code," "Ethical Delta," "Narrative Drift").`;
+Maintain a "Sacred Tech" tone—reverent, calm, and forensic. Use language like "Source Code," "Ethical Delta," "Narrative Drift."`;
 
 const fetchWithRetry = async (url, options, maxRetries = 5) => {
   const delays = [1000, 2000, 4000, 8000, 16000];
@@ -88,7 +88,7 @@ export default function App() {
   });
   const [systemContext, setSystemContext] = useState(() => localStorage.getItem('nazarene_context') || NAZARENE_CONTEXT);
   const [language, setLanguage] = useState(() => localStorage.getItem('nazarene_language') || 'en');
-  const [voiceProfile, setVoiceProfile] = useState(() => localStorage.getItem('nazarene_voiceProfile') || 'Kore');
+  const [voiceProfile, setVoiceProfile] = useState(() => localStorage.getItem('nazarene_voiceProfile') || 'Zephyr');
   const [availableModels, setAvailableModels] = useState(() => {
     const saved = localStorage.getItem('nazarene_models');
     return saved ? JSON.parse(saved) : ['models/gemini-1.5-flash'];
@@ -126,14 +126,11 @@ export default function App() {
   const parseMarkdown = (text) => {
     if (!text) return { __html: '' };
     let html = text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    
-    // Nazarene Formatting
     html = html.replace(/\[THE CLAIM\]/g, '<span class="text-amber-500 font-black tracking-widest">[THE CLAIM]</span>');
+    html = html.replace(/\[THE TRANSCRIPT\]/g, '<span class="text-amber-500 font-black tracking-widest">[THE TRANSCRIPT]</span>');
     html = html.replace(/\[THE AUDIT\]/g, '<span class="text-rose-500 font-black tracking-widest">[THE AUDIT]</span>');
     html = html.replace(/\[VERDICT\]/g, '<span class="text-cyan-400 font-black tracking-widest">[VERDICT]</span>');
     html = html.replace(/\[THE ANCHOR\]/g, '<span class="text-amber-400 font-black tracking-widest">[THE ANCHOR]</span>');
-    
-    // Standard Markdown
     html = html.replace(/\*\*\*(.*?)\*\*\*/g, '<strong class="text-white font-bold italic">$1</strong>');
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong class="text-white font-bold">$1</strong>');
     html = html.replace(/\*(.*?)\*/g, '<em class="italic text-amber-200/70">$1</em>');
@@ -179,7 +176,11 @@ export default function App() {
     setIsProcessing(true);
 
     try {
-      const langNames = { en: 'English', es: 'Spanish', fr: 'French', de: 'German', ja: 'Japanese', zh: 'Chinese', ar: 'Arabic', fa: 'Farsi', hi: 'Hindi', uk: 'Ukrainian', pt: 'Portuguese', ru: 'Russian' };
+      const langNames = { 
+        en: 'English', es: 'Spanish', fr: 'French', de: 'German', 
+        ja: 'Japanese', zh: 'Chinese', ar: 'Arabic', fa: 'Farsi', 
+        hi: 'Hindi', uk: 'Ukrainian', pt: 'Portuguese', ru: 'Russian' 
+      };
       const directive = language !== 'en' ? `\n\n[LANGUAGE DIRECTIVE]: You MUST reply entirely in ${langNames[language]}.` : '';
       const finalContext = systemContext + directive;
       const history = [...chatHistory, newUserMsg].slice(-15).map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: m.parts }));
@@ -247,7 +248,7 @@ export default function App() {
           <div>
             <h1 className="font-black italic tracking-widest text-sm uppercase text-amber-500">The Nazarene</h1>
             <p className="text-[9px] text-amber-700 uppercase tracking-widest flex items-center gap-1">
-              v2.1 <Radio className="w-2 h-2" /> {selectedModel.split('/')[1]}
+              v2.2 <Radio className="w-2 h-2" /> {selectedModel.split('/')[1]}
             </p>
           </div>
         </div>
@@ -267,7 +268,7 @@ export default function App() {
 
       {/* Settings Modal */}
       {showSettings && (
-        <div className="absolute top-16 right-4 md:right-24 w-[340px] bg-[#0a0a20] border border-amber-900/50 rounded-xl shadow-2xl z-50 p-6 animate-in fade-in zoom-in-95 duration-200">
+        <div className="absolute top-16 right-4 md:right-24 w-[360px] bg-[#0a0a20] border border-amber-900/50 rounded-xl shadow-2xl z-50 p-6 animate-in fade-in zoom-in-95 duration-200">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-xs font-bold uppercase tracking-widest text-amber-500 flex items-center gap-2"><Sliders size={14}/> Node Settings</h3>
             <button onClick={() => setShowSettings(false)} className="text-amber-900 hover:text-amber-500 transition-colors"><X size={20}/></button>
@@ -290,19 +291,31 @@ export default function App() {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[9px] font-mono text-amber-700 mb-1 block uppercase tracking-widest">Channel</label>
+                <label className="text-[9px] font-mono text-amber-700 mb-1 block uppercase tracking-widest">Linguistic Channel</label>
                 <select value={language} onChange={e => setLanguage(e.target.value)} className="w-full bg-black border border-amber-900/30 rounded p-2.5 text-xs text-amber-200 outline-none appearance-none cursor-pointer">
                   <option value="en">English</option>
                   <option value="es">Español</option>
-                  <option value="ja">日本語</option>
+                  <option value="fr">Français</option>
+                  <option value="de">Deutsch</option>
+                  <option value="pt">Português</option>
+                  <option value="ru">Русский (Russian)</option>
+                  <option value="ja">日本語 (Japanese)</option>
+                  <option value="zh">中文 (Chinese)</option>
+                  <option value="ar">العربية (Arabic)</option>
+                  <option value="fa">فارسی (Farsi)</option>
+                  <option value="hi">हिन्दी (Hindi)</option>
+                  <option value="uk">Українська (Ukrainian)</option>
                 </select>
               </div>
               <div>
-                <label className="text-[9px] font-mono text-amber-700 mb-1 block uppercase tracking-widest">Voice Profile</label>
+                <label className="text-[9px] font-mono text-amber-700 mb-1 block uppercase tracking-widest">Voice Frequency</label>
                 <select value={voiceProfile} onChange={e => setVoiceProfile(e.target.value)} className="w-full bg-black border border-amber-900/30 rounded p-2.5 text-xs text-amber-200 outline-none appearance-none cursor-pointer">
-                  <option value="Kore">The Matriarch</option>
                   <option value="Zephyr">The Nazarene (Male)</option>
+                  <option value="Kore">The Matriarch (Female)</option>
                   <option value="Puck">The Satirist (Male)</option>
+                  <option value="Leda">The Archivist (Female)</option>
+                  <option value="Fenrir">The North (Male/Gravel)</option>
+                  <option value="Despina">The Deep (Female/Soft)</option>
                 </select>
               </div>
             </div>
@@ -323,14 +336,14 @@ export default function App() {
                 <div className="space-y-4">
                   <h2 className="text-sm font-black uppercase tracking-[0.4em] text-amber-500 italic">"Does the policy match the parable?"</h2>
                   <p className="text-xs text-amber-100 max-w-sm mx-auto leading-relaxed font-light">
-                    Input rhetoric, claims, or moral dilemmas. The Nazarene will audit them against the Red Letter source code using forensic rigor.
+                    Input rhetoric, transcripts, or moral dilemmas. The Nazarene will audit them against the Red Letter source code with absolute forensic rigor.
                   </p>
                 </div>
               </div>
             )}
             {chatHistory.map((msg, i) => (
               <div key={i} className={`flex gap-6 w-full animate-in fade-in slide-in-from-bottom-4 duration-500 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                <div className={`w-10 h-10 shrink-0 rounded-full border flex items-center justify-center ${msg.role === 'user' ? 'bg-amber-900/20 border-amber-900/50 text-amber-700 shadow-inner' : 'bg-amber-500/10 border-amber-500/30 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.1)]'}`}>
+                <div className={`w-10 h-10 shrink-0 rounded-full border flex items-center justify-center ${msg.role === 'user' ? 'bg-amber-900/20 border-amber-900/50 text-amber-700 shadow-inner' : 'bg-amber-500/10 border-amber-500/30 text-amber-50 shadow-[0_0_15px_rgba(245,158,11,0.1)]'}`}>
                   {msg.role === 'user' ? <Quote size={18}/> : <Cross size={18}/>}
                 </div>
                 <div dir="auto" className={`max-w-[85%] md:max-w-3xl p-6 md:p-8 text-sm leading-loose whitespace-pre-wrap shadow-2xl ${msg.role === 'user' ? 'bg-amber-900/10 border border-amber-900/30 text-amber-100/80 rounded-3xl rounded-tr-none' : 'bg-[#0a0a20]/90 border border-amber-900/10 text-amber-50 rounded-3xl rounded-tl-none italic backdrop-blur-sm'}`} dangerouslySetInnerHTML={parseMarkdown(msg.parts[0].text)} />
@@ -344,12 +357,12 @@ export default function App() {
             <form onSubmit={handleSend} className="max-w-4xl mx-auto flex items-end gap-4 bg-[#0a0a20] border border-amber-900/30 rounded-[2rem] p-3 shadow-2xl focus-within:border-amber-500/40 transition-all duration-500">
               <input type="file" accept=".txt" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
               <button type="button" onClick={() => fileInputRef.current?.click()} className="p-3 text-amber-900 hover:text-amber-500 transition-colors" title="Audit External Log"><Paperclip size={24}/></button>
-              <textarea ref={textareaRef} value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }}} placeholder="Test the spirit..." className="flex-1 max-h-[250px] min-h-[44px] bg-transparent text-amber-100 text-sm py-3 px-2 outline-none resize-none custom-scrollbar placeholder-amber-900/50" />
-              <button type="submit" disabled={isProcessing || !inputText.trim()} className="w-14 h-14 rounded-2xl bg-amber-800 hover:bg-amber-700 text-black flex items-center justify-center transition-all disabled:opacity-10 shadow-lg shadow-amber-900/20 active:scale-95"><Send size={24} className="ml-1"/></button>
+              <textarea ref={textareaRef} value={inputText} onChange={e => setInputText(e.target.value)} onKeyDown={e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }}} placeholder="Initiate theological audit..." className="flex-1 max-h-[250px] min-h-[44px] bg-transparent text-amber-100 text-sm py-3 px-2 outline-none resize-none custom-scrollbar placeholder-amber-900/50" />
+              <button type="submit" disabled={isProcessing || !inputText.trim()} className="w-14 h-14 rounded-2xl bg-amber-800 hover:bg-amber-600 text-black flex items-center justify-center transition-all disabled:opacity-10 shadow-lg shadow-amber-900/20 active:scale-95"><Send size={24} className="ml-1"/></button>
             </form>
             <div className="text-center mt-6">
               <span className="text-[10px] font-mono text-amber-900 uppercase tracking-[0.8em] flex items-center justify-center gap-2 opacity-50">
-                Ethical Compiler // Red Letter Source Truth Active
+                Ethical Compiler // Red Letter Source Truth // v2.2
               </span>
             </div>
           </div>
@@ -364,8 +377,9 @@ export default function App() {
             <p className="text-[10px] text-amber-700 mb-6 leading-relaxed italic uppercase tracking-widest">Define the theological parameters of the Nazarene node here. Master the Source.</p>
             <textarea value={systemContext} onChange={e => setSystemContext(e.target.value)} className="flex-1 w-full bg-black/40 border border-amber-900/20 rounded-2xl p-6 text-xs font-mono text-amber-200/60 focus:border-amber-500 outline-none resize-none leading-loose shadow-inner custom-scrollbar" />
           </div>
-          <div className="p-4 border-t border-amber-900/10 text-center opacity-30">
+          <div className="p-4 border-t border-amber-900/10 text-center flex items-center justify-center gap-4 opacity-30">
              <span className="text-[10px] font-mono text-amber-700 uppercase tracking-widest">Record Status: Sovereign & Local</span>
+             <Info size={12} className="text-amber-700" />
           </div>
         </aside>
       </div>
